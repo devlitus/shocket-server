@@ -6,16 +6,18 @@ import { Usuario } from '../classes/usuario';
 
 export const usuariosConectados = new Usuarioslista();
 
-export const conectarCliente = (cliente: Socket) => {
+export const conectarCliente = (cliente: Socket, io: socketIo.Server) => {
   const usuario = new Usuario(cliente.id);
   usuariosConectados.agregar(usuario);
+  io.emit('usuarios-activos', usuariosConectados.getLista());
 }
 
 // Estado de la coneccón
-export const desconectar = (cliente: Socket) => {
+export const desconectar = (cliente: Socket, io: socketIo.Server) => {
   cliente.on('disconnect', () => {
     console.log('Cliente desconectado');
     usuariosConectados.borrarUsuario(cliente.id);
+    io.emit('usuarios-activos', usuariosConectados.getLista());
   });
 }
 
@@ -29,12 +31,18 @@ export const mensaje = (cliente: Socket, io: socketIo.Server) => {
 }
 // Configurar usuario
 export const configurarUsuario = (cliente: Socket, io: socketIo.Server) => {
-  cliente.on('configurar-usuario', (payload, callback: any) => {
+  cliente.on('configurar-usuario', (payload: any, callback: Function) => {
     usuariosConectados.actualizarUsuario(cliente.id, payload.nombre);
+    io.emit('usuarios-activos', usuariosConectados.getLista());
     callback({
       ok: true,
       mensaje: `Usuario ${payload.nombre} configurado`
     })
-    // io.emit('mensaje-nuevo', payload)
   })
+}
+// Configurar usuario
+export const ObtenerUsuario = (cliente: Socket, io: socketIo.Server) => {
+  cliente.on('obtener-usuario', () => {
+    io.emit('usuarios-activos', usuariosConectados.getLista());
+  });
 }
